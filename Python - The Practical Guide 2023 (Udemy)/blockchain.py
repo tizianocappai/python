@@ -1,3 +1,5 @@
+import functools
+
 MINING_REWARD = 10
 
 genesis_block = {
@@ -21,17 +23,13 @@ def get_balance(participant):
     open_tx_sender = [tx['amount']
                       for tx in open_transaction if tx['sender'] == participant]
     tx_sender.append(open_tx_sender)
-    amount_sent = 0
-    for tx in tx_sender:
-        if len(tx) > 0:
-            amount_sent += tx[0]
+    amount_sent = functools.reduce(
+        lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
 
     tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant]
                     for block in blockchain]
-    amount_received = 0
-    for tx in tx_recipient:
-        if len(tx) > 0:
-            amount_received += tx[0]
+    amount_received = functools.reduce(
+        lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
 
     return amount_received - amount_sent
 
@@ -116,6 +114,10 @@ def verify_chain():
     return True
 
 
+def verify_transactions():
+    return all([verify_transaction(tx) for tx in open_transaction])
+
+
 waiting_for_input = True
 
 while waiting_for_input:
@@ -124,6 +126,7 @@ while waiting_for_input:
     print('2: Mine new block')
     print('3: Output the blockchain blocks')
     print('4: Output participants')
+    print('5: Check transaction validity')
     print('h: Manipulate the chain')
     print('q: Quit')
 
@@ -144,6 +147,11 @@ while waiting_for_input:
         print_blockchain()
     elif user_choice == '4':
         print(participants)
+    elif user_choice == '5':
+        if verify_transactions():
+            print('All transactions are valid')
+        else:
+            print('There are invalid transactions')
     elif user_choice == 'h':
         if len(blockchain) >= 1:
             blockchain[0] = {
@@ -165,7 +173,7 @@ while waiting_for_input:
         print('Invalid blockchain!')
         break
 
-    print(get_balance('Tiz'))
+    print('Balance of {}: {:6.2f}'.format('Tiz', get_balance('Tiz')))
 else:
     print('User left!')
 

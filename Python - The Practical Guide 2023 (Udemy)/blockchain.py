@@ -1,4 +1,6 @@
 import functools
+import hashlib
+import json
 
 MINING_REWARD = 10
 
@@ -14,7 +16,23 @@ participants = {'Tiz'}
 
 
 def hash_block(block):
-    return '-'.join([str(block[key]) for key in block])
+    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
+
+
+def valid_proof(transaction, last_hash, proof):
+    guess = (str(transaction) + str(last_hash) + str(proof)).encode()
+    guess_hash = hashlib.sha256(guess).hexdigest()
+    print(guess_hash)
+    return guess_hash[0:2] == '00'
+
+
+def proof_of_work():
+    last_block = blockchain[-1]
+    last_hash = hash_block(last_block)
+    proof = 0
+    while valid_proof(open_transaction, last_hash, proof):
+        proof += 1
+    return proof
 
 
 def get_balance(participant):
@@ -70,6 +88,7 @@ def add_transaction(sender, recipient, amount=1.0):
 def mine_block():
     last_block = blockchain[-1]
     hashed_block = hash_block(last_block)
+    print(hashed_block)
     reward_transaction = {
         'sender': 'MINING',
         'recipient': owner,
